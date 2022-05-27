@@ -1,13 +1,11 @@
-const res = require("express/lib/response");
-const { Sequelize, DataTypes } = require("sequelize");
-const sequelize = require("./index.js");
-const sqlite3 = require("sqlite3").verbose();
+const { DataTypes } = require('sequelize');
+const sequelize = require('./index');
 
 /**
  * Create the Model for the Tests database
  */
 const Test = sequelize.define(
-	"Test",
+	'Test',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -32,7 +30,7 @@ const Test = sequelize.define(
  * Create the Model for the Questions database
  */
 const Question = sequelize.define(
-	"Question",
+	'Question',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -69,22 +67,11 @@ const Question = sequelize.define(
 	}
 );
 
-// Relation between Tests and Questions
-Test.hasMany(Question, {
-	onDelete: "CASCADE",
-	onUpdate: "CASCADE",
-	foreignKey: "test_id",
-});
-Question.belongsTo(Test, {
-	allowNull: false,
-	foreignKey: "test_id",
-});
-
 /**
  * Create the Model for the Answers database
  */
 const Answer = sequelize.define(
-	"Answer",
+	'Answer',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -105,22 +92,106 @@ const Answer = sequelize.define(
 	}
 );
 
-// Relation between Questions and Answers
-Question.hasMany(Answer, {
-	onDelete: "CASCADE",
-	onUpdate: "CASCADE",
-	foreignKey: "question_id",
-});
-Answer.belongsTo(Question, {
-	allowNull: false,
-	foreignKey: "question_id",
-});
+// ------------------------------------------------------------------------
 
 /**
- * Create the Model for the TestInstances database
+ * Create the Model for the PlayedTests database
  */
-const TestInstance = sequelize.define(
-	"TestInstance",
+const PlayedTest = sequelize.define(
+	'PlayedTest',
+	{
+		id: {
+			type: DataTypes.INTEGER,
+			autoIncrement: true,
+			primaryKey: true,
+		},
+		title: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
+		image: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		},
+	},
+	{
+		timestamps: true,
+	}
+);
+
+/**
+ * Create the Model for the PlayedQuestions database
+ */
+const PlayedQuestion = sequelize.define(
+	'PlayedQuestion',
+	{
+		id: {
+			type: DataTypes.INTEGER,
+			autoIncrement: true,
+			primaryKey: true,
+		},
+		title: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
+		image: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		},
+		question_type: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
+		allocated_time: {
+			type: DataTypes.DOUBLE,
+			allowNull: false,
+		},
+		question_order: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+		},
+		weight: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+		},
+	},
+	{
+		timestamps: true,
+	}
+);
+
+/**
+ * Create the Model for the PlayedAnswers database
+ */
+const PlayedAnswer = sequelize.define(
+	'PlayedAnswer',
+	{
+		id: {
+			type: DataTypes.INTEGER,
+			autoIncrement: true,
+			primaryKey: true,
+		},
+		title: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
+		is_correct: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+		},
+	},
+	{
+		timestamps: true,
+	}
+);
+
+//--------------------------------------------------------------------------
+
+/**
+ * Create the Model for the Games database
+ */
+const Game = sequelize.define(
+	'Game',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -143,21 +214,11 @@ const TestInstance = sequelize.define(
 	}
 );
 
-// Relation between Tests and TestInstances
-Test.hasMany(TestInstance, {
-	onDelete: "NO ACTION",
-	onUpdate: "NO ACTION",
-	foreignKey: "test_id",
-});
-TestInstance.belongsTo(Test, {
-	foreignKey: "test_id",
-});
-
 /**
- * Create the Model for the PlayerInstances database
+ * Create the Model for the Players database
  */
-const PlayerInstance = sequelize.define(
-	"PlayerInstance",
+const Player = sequelize.define(
+	'Player',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -180,22 +241,11 @@ const PlayerInstance = sequelize.define(
 	}
 );
 
-// Relation between TestInstances and PlayerInstances
-TestInstance.hasMany(PlayerInstance, {
-	onDelete: "CASCADE",
-	onUpdate: "CASCADE",
-	foreignKey: "test_instance_id",
-});
-PlayerInstance.belongsTo(TestInstance, {
-	allowNull: false,
-	foreignKey: "test_instance_id",
-});
-
 /**
- * Create the Model for the AnswerInstances database
+ * Create the Model for the Responses database
  */
-const AnswerInstance = sequelize.define(
-	"AnswerInstance",
+const Response = sequelize.define(
+	'Response',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -211,47 +261,131 @@ const AnswerInstance = sequelize.define(
 		timestamps: true,
 	}
 );
+/* ---------------------------------------- DATABASE RELATIONS   ----------------------------------------------------*/
 
-// Relation between AnswerInstances and TestInstances
-TestInstance.hasMany(AnswerInstance, {
-	onDelete: "CASCADE",
-	onUpdate: "CASCADE",
-	foreignKey: "test_instance_id",
+// Relations between Tests, Questions and Answers
+
+// Relation between Tests and Questions 1:N
+Test.hasMany(Question, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'test_id',
 });
-AnswerInstance.belongsTo(TestInstance, {
+Question.belongsTo(Test, {
 	allowNull: false,
-	foreignKey: "test_instance_id",
+	foreignKey: 'test_id',
 });
 
-// Relation between AnswerInstances and PlayerInstances
-PlayerInstance.hasMany(AnswerInstance, {
-	onDelete: "CASCADE",
-	onUpdate: "CASCADE",
-	foreignKey: "player_instance_id",
+// Relation between Questions and Answers 1:N
+Question.hasMany(Answer, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'question_id',
 });
-AnswerInstance.belongsTo(PlayerInstance, {
+Answer.belongsTo(Question, {
 	allowNull: false,
-	foreignKey: "player_instance_id",
+	foreignKey: 'question_id',
 });
 
-// Relation between AnswerInstances and Questions
-Question.hasMany(AnswerInstance, {
-	onDelete: "NO ACTION",
-	onUpdate: "NO ACTION",
-	foreignKey: "question_id",
+// Relations between PlayedTests (& Tests & Games), Played Questions and PlayedAnswers
+
+// Relation PlayedTests and Tests 1:N
+Test.hasMany(PlayedTest, {
+	onDelete: 'NO ACTION',
+	onUpdate: 'NO ACTION',
+	foreignKey: 'test_id',
 });
-AnswerInstance.belongsTo(Question, {
-	foreignKey: "question_id",
+PlayedTest.belongsTo(Test, {
+	allowNull: false,
+	foreignKey: 'test_id',
 });
 
-// Relation between AnswerInstances and Answers
-Answer.hasMany(AnswerInstance, {
-	onDelete: "NO ACTION",
-	onUpdate: "NO ACTION",
-	foreignKey: "answer_id",
+// Relation PlayedTests and Games 1:1
+Game.hasOne(PlayedTest, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'game_id',
 });
-AnswerInstance.belongsTo(Answer, {
-	foreignKey: "answer_id",
+PlayedTest.belongsTo(Game, {
+	allowNull: false,
+	foreignKey: 'game_id',
+});
+
+// Relation between PlayedTests and PlayedQuestions 1:N
+PlayedTest.hasMany(PlayedQuestion, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'played_test_id',
+});
+PlayedQuestion.belongsTo(PlayedTest, {
+	allowNull: false,
+	foreignKey: 'played_test_id',
+});
+
+// Relation between PlayedQuestions and PlayedAnswers 1:N
+PlayedQuestion.hasMany(PlayedAnswer, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'played_question_id',
+});
+PlayedAnswer.belongsTo(PlayedQuestion, {
+	allowNull: false,
+	foreignKey: 'played_question_id',
+});
+
+// Relations between Games, Players and Responses ------------------------------------------
+
+// Relation between Games and Players 1:N
+Game.hasMany(Player, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'game_id',
+});
+Player.belongsTo(Game, {
+	allowNull: false,
+	foreignKey: 'game_id',
+});
+
+// Relation between Responses and Games 1:N
+Game.hasMany(Response, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'game_id',
+});
+Response.belongsTo(Game, {
+	allowNull: false,
+	foreignKey: 'game_id',
+});
+
+// Relation between Responses and Players 1:N
+Player.hasMany(Response, {
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'player_id',
+});
+Response.belongsTo(Player, {
+	allowNull: false,
+	foreignKey: 'player_id',
+});
+
+// Relation between Responses and PlayedQuestions 1:N
+PlayedQuestion.hasMany(Response, {
+	onDelete: 'NO ACTION',
+	onUpdate: 'NO ACTION',
+	foreignKey: 'played_question_id',
+});
+Response.belongsTo(PlayedQuestion, {
+	foreignKey: 'played_question_id',
+});
+
+// Relation between Responses and PlayedAnswers 1:N
+PlayedAnswer.hasMany(Response, {
+	onDelete: 'NO ACTION',
+	onUpdate: 'NO ACTION',
+	foreignKey: 'played_answer_id',
+});
+Response.belongsTo(PlayedAnswer, {
+	foreignKey: 'played_answer_id',
 });
 
 /**
@@ -260,7 +394,7 @@ AnswerInstance.belongsTo(Answer, {
  */
 async function getAllTests() {
 	const allTests = await Test.findAll({
-		attributes: ["id", "title", "image"],
+		attributes: ['id', 'title', 'image'],
 	});
 	console.log(allTests);
 	return allTests;
@@ -282,14 +416,15 @@ async function getTestById(testId) {
 				model: Answer,
 			},
 		},
-		order: [[Question, "question_order", "ASC"]],
+		order: [[Question, 'question_order', 'ASC']],
 	});
 	console.log(selectedTest);
-	if (selectedTest == null) {
+	if (!selectedTest) {
 		console.log("There isn't a test with that ID");
-	} else {
-		return selectedTest;
+		return null;
 	}
+
+	return selectedTest;
 }
 
 /**
@@ -302,7 +437,6 @@ async function deleteTestById(testId) {
 			id: testId,
 		},
 	});
-	return;
 }
 
 module.exports = { getAllTests, getTestById, deleteTestById };
