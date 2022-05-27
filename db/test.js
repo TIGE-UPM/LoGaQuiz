@@ -439,4 +439,58 @@ async function deleteTestById(testId) {
 	});
 }
 
-module.exports = { getAllTests, getTestById, deleteTestById };
+/**
+ * Function that returns an array with the id, title and image of all games
+ * @returns Game array
+ */
+async function getAllGames() {
+	const allGames = await Game.findAll({
+		attributes: ['played_at'],
+		include: {
+			model: PlayedTest,
+			attributes: ['id', 'title', 'image'],
+		},
+	});
+	return allGames;
+}
+
+/**
+ * Returns an array with all the test information
+ * @param testId
+ * @returns complete test
+ */
+async function getGameById(gameId) {
+	const selectedGame = await Game.findAll({
+		where: {
+			id: gameId,
+		},
+		include: {
+			model: Player,
+			include: {
+				model: Response,
+			},
+		},
+		// order: [[Player, 'ranking', 'ASC']],
+	});
+	console.log(selectedGame);
+	if (!selectedGame) {
+		console.log("There isn't a test with that ID");
+		return null;
+	}
+
+	return selectedGame;
+}
+
+/**
+ * Deletes the specified game
+ * @param gameId
+ */
+async function deleteGameById(gameId) {
+	await Game.destroy({
+		where: {
+			id: gameId,
+		},
+	});
+}
+
+module.exports = { getAllTests, getTestById, deleteTestById, getAllGames, getGameById, deleteGameById };

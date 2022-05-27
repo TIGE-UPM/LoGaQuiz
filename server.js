@@ -11,7 +11,7 @@ const db = require('./db');
 const Test = require('./db/test');
 
 const testRouter = express.Router();
-const testInstanceRouter = express.Router();
+const gameRouter = express.Router();
 const authRouter = express.Router();
 
 app.use(cookieParser());
@@ -30,7 +30,6 @@ app.use(expressSession({
  * @return res The created test
  */
 testRouter.post('/', (req, res, next) => {
-	const fulltest = req.body;
 });
 
 /**
@@ -38,9 +37,8 @@ testRouter.post('/', (req, res, next) => {
  * @return res Array of all test titles and IDs
  */
 testRouter.get('/all', async (req, res, next) => {
-	console.log('Estoy en el router');
-	const alltests = await Test.getAllTests();
-	res.send(alltests);
+	const allTests = await Test.getAllTests();
+	res.send(allTests);
 });
 
 /**
@@ -65,39 +63,57 @@ testRouter.patch('/:testId', (req, res, next) => {});
  * @params req.params.testId Id of the required test
  */
 testRouter.delete('/:testId', async (req, res, next) => {
-	const testID = req.params.testId;
-	await Test.deleteTestById(testID);
+	await Test.deleteTestById(req.params.testId);
 	res.sendStatus(204);
 });
 
 /* ------------------------------------------    ROUTES FOR TESTINSTANCE    ----------------------------------------------- */
 
 // Endpoint for creating a new test instance
-testInstanceRouter.post('/', (req, res, next) => {});
+gameRouter.post('/', (req, res, next) => {});
 
-// Endpoint for receiving all test instances
-testInstanceRouter.get('/all', (req, res, next) => {});
+/**
+ * Sends an array of all the games
+ * @return res Array of all game titles and IDs
+ */
+gameRouter.get('/all', async (req, res, next) => {
+	const allGames = await Test.getAllGames();
+	res.send(allGames);
+});
 
-// Endpoint for receiving specified test instance
-testInstanceRouter.get('/:testInstanceId', (req, res, next) => {});
+/**
+ * Sends all the information of the specified game
+ * @params req.params.gameId Id of the required game
+ * @return res Game with the specified Id with its players and responses
+ */
+gameRouter.get('/:gameId', async (req, res, next) => {
+	const selectedGame = await Test.getGameById(req.params.gameId);
+	res.send(selectedGame);
+});
 
-// Endpoint for deleting specified test instance
-testInstanceRouter.delete('/:testInstanceId', (req, res, next) => {});
+/**
+ * Deletes all the information of the specified game
+ * @params req.params.gameId Id of the required game
+ */
+gameRouter.delete('/:gameId', async (req, res, next) => {
+	await Test.deleteGameById(req.params.gameId);
+	res.sendStatus(204);
+});
 
 // Endpoint for creating a playerInstance for specified test instance
-testInstanceRouter.post('/:testInstanceId/join', (req, res, next) => {});
+gameRouter.post('/:gameId/join', (req, res, next) => {});
 
 // Endpoint for starting specified test instance
-testInstanceRouter.post('/:testInstanceId/start', (req, res, next) => {});
+gameRouter.post('/:gameId/start', (req, res, next) => {});
 
 // Endpoint for creating a answerInstance for specified test instance
-testInstanceRouter.post('/:testInstanceId/answer', (req, res, next) => {});
+gameRouter.post('/:gameId/answer', (req, res, next) => {});
 
 // Endpoint for ending specified test instance
-testInstanceRouter.post('/:testInstanceId/end', (req, res, next) => {});
+gameRouter.post('/:gameId/end', (req, res, next) => {});
 
 // Endpoint for moving to the next question in specified test instance
-testInstanceRouter.post('/:testInstanceId/next-question', (req, res, next) => {});
+gameRouter.post('/:gameId/next-question', (req, res, next) => {});
 
 /* ------------------------------------------    ROUTES FOR AUTH    ----------------------------------------------- */
 
@@ -114,7 +130,7 @@ authRouter.post('/admin-login', async (req, res) => {
 });
 
 app.use('/test', testRouter);
-app.use('/test-instance', testInstanceRouter);
+app.use('/game', gameRouter);
 app.use('/auth', authRouter);
 
 app.listen(port, () => {
