@@ -370,8 +370,8 @@ Response.belongsTo(Player, {
 
 // Relation between Responses and PlayedQuestions 1:N
 PlayedQuestion.hasMany(Response, {
-	onDelete: 'NO ACTION',
-	onUpdate: 'NO ACTION',
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
 	foreignKey: 'played_question_id',
 });
 Response.belongsTo(PlayedQuestion, {
@@ -380,13 +380,93 @@ Response.belongsTo(PlayedQuestion, {
 
 // Relation between Responses and PlayedAnswers 1:N
 PlayedAnswer.hasMany(Response, {
-	onDelete: 'NO ACTION',
-	onUpdate: 'NO ACTION',
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
 	foreignKey: 'played_answer_id',
 });
 Response.belongsTo(PlayedAnswer, {
 	foreignKey: 'played_answer_id',
 });
+
+/* ------------------------------------------------------- Database functions -------------------------------------------*/
+
+// Tests
+
+/**
+ * Creates the specified test
+ * @param test
+ */
+async function createNewTest(test) {
+	const { id: testId } = await Test.create({ title: `${test.title}` });
+	let questionOrder = 1;
+	// console.log(test);
+	// console.log(test.questions);
+	for (const question of test.questions) {
+		const { id: questionId } = await Question.create({
+			title: `${question.title}`,
+			question_type: `${question.question_type}`,
+			allocated_time: question.allocated_time,
+			question_order: questionOrder,
+			weight: question.weight,
+			test_id: testId,
+		});
+		for (const answer of question.answers) {
+			await Answer.create({
+				title: `${answer.title}`,
+				is_correct: answer.is_correct,
+				question_id: questionId,
+			});
+		}
+		questionOrder += 1;
+	}
+	const createdTest = await getTestById(testId);
+	if (!createdTest) {
+		console.log('There was an error creating the test');
+		return null;
+	}
+	return createdTest;
+}
+
+/**
+ * Creates the specified played test, played questions and played answers
+ * @param  test
+ * @param gameId
+ */
+async function createNewPlayedTest(test, gameId) {
+	console.log(test);
+	console.log(gameId);
+	const { id: playedTestId } = await PlayedTest.create({
+		title: `${test.title}`,
+		image: `${test.image}`,
+		test_id: test.id,
+		game_id: gameId,
+	});
+
+	for (const question of test.Questions) {
+		const { id: playedQuestionId } = await PlayedQuestion.create({
+			title: `${question.title}`,
+			image: `${question.image}`,
+			question_type: `${question.question_type}`,
+			allocated_time: question.allocated_time,
+			question_order: question.question_order,
+			weight: question.weight,
+			played_test_id: playedTestId,
+		});
+		for (const answer of question.Answers) {
+			await PlayedAnswer.create({
+				title: `${answer.title}`,
+				is_correct: answer.is_correct,
+				played_question_id: playedQuestionId,
+			});
+		}
+	}
+	const createdPlayedTest = await getPlayedTestById(playedTestId);
+	if (!createdPlayedTest) {
+		console.log('There was an error creating the played test');
+		return null;
+	}
+	return createdPlayedTest;
+}
 
 /**
  * Function that returns an array with the id, title and image of all tests
@@ -406,7 +486,7 @@ async function getAllTests() {
  * @returns complete test
  */
 async function getTestById(testId) {
-	const selectedTest = await Test.findAll({
+	const selectedTest = await Test.findOne({
 		where: {
 			id: testId,
 		},
@@ -418,13 +498,38 @@ async function getTestById(testId) {
 		},
 		order: [[Question, 'question_order', 'ASC']],
 	});
-	console.log(selectedTest);
 	if (!selectedTest) {
 		console.log("There isn't a test with that ID");
 		return null;
 	}
 
 	return selectedTest;
+}
+
+/**
+ * Returns an array with all the played test information
+ * @param playedTestId
+ * @returns complete played test
+ */
+async function getPlayedTestById(playedTestId) {
+	const selectedPlayedTest = await PlayedTest.findOne({
+		where: {
+			id: playedTestId,
+		},
+		include: {
+			model: PlayedQuestion,
+			include: {
+				model: PlayedAnswer,
+			},
+		},
+		order: [[PlayedQuestion, 'question_order', 'ASC']],
+	});
+	if (!selectedPlayedTest) {
+		console.log("There isn't a test with that ID");
+		return null;
+	}
+
+	return selectedPlayedTest;
 }
 
 /**
@@ -437,6 +542,25 @@ async function deleteTestById(testId) {
 			id: testId,
 		},
 	});
+}
+
+// Games
+
+/**
+ * Creates the specified game
+ * @param game
+ */
+async function createNewGame(game) {
+	const createdGame = await Game.create({
+		finished: false,
+	});
+	const realTest = await getTestById(game.testId);
+	const createdPlayedTest = await createNewPlayedTest(realTest, createdGame.id);
+	if (!createdPlayedTest) {
+		console.log('There was an error creating the test');
+		return null;
+	}
+	return createdPlayedTest;
 }
 
 /**
@@ -460,7 +584,7 @@ async function getAllGames() {
  * @returns complete test
  */
 async function getGameById(gameId) {
-	const selectedGame = await Game.findAll({
+	const selectedGame = await Game.findOne({
 		where: {
 			id: gameId,
 		},
@@ -472,9 +596,8 @@ async function getGameById(gameId) {
 		},
 		// order: [[Player, 'ranking', 'ASC']],
 	});
-	console.log(selectedGame);
 	if (!selectedGame) {
-		console.log("There isn't a test with that ID");
+		console.log("There isn't a game with that ID");
 		return null;
 	}
 
@@ -493,4 +616,18 @@ async function deleteGameById(gameId) {
 	});
 }
 
-module.exports = { getAllTests, getTestById, deleteTestById, getAllGames, getGameById, deleteGameById };
+/**
+ * Starts game with specified gameId
+ * @param gameId
+ */
+async function startGame(gameId) {
+	const firstQuestion = await getFirstGameQuestion(gameId);
+	await Game.update({ played_at: DataTypes.NOW, current_question_id: firstQuestion.id }, {
+		where: {
+			id: gameId,
+			played_at: null,
+		},
+	});
+}
+
+module.exports = { createNewTest, getAllTests, getTestById, deleteTestById, createNewGame, getAllGames, getGameById, deleteGameById, startGame };

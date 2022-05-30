@@ -29,7 +29,10 @@ app.use(expressSession({
  * @param req.body The test information, containing its questions and its answers
  * @return res The created test
  */
-testRouter.post('/', (req, res, next) => {
+testRouter.post('/', async (req, res, next) => {
+	const newCompleteTest = req.body;
+	const createdTest = await Test.createNewTest(newCompleteTest);
+	res.send(createdTest);
 });
 
 /**
@@ -67,10 +70,14 @@ testRouter.delete('/:testId', async (req, res, next) => {
 	res.sendStatus(204);
 });
 
-/* ------------------------------------------    ROUTES FOR TESTINSTANCE    ----------------------------------------------- */
+/* ------------------------------------------           ROUTES FOR GAMES               ----------------------------------------------- */
 
-// Endpoint for creating a new test instance
-gameRouter.post('/', (req, res, next) => {});
+// Endpoint for creating a new game
+gameRouter.post('/', async (req, res, next) => {
+	const newGame = req.body;
+	const createdGame = await Test.createNewGame(newGame);
+	res.send(createdGame);
+});
 
 /**
  * Sends an array of all the games
@@ -100,19 +107,22 @@ gameRouter.delete('/:gameId', async (req, res, next) => {
 	res.sendStatus(204);
 });
 
-// Endpoint for creating a playerInstance for specified test instance
+// Endpoint for creating a Player for specified test instance
 gameRouter.post('/:gameId/join', (req, res, next) => {});
 
-// Endpoint for starting specified test instance
-gameRouter.post('/:gameId/start', (req, res, next) => {});
+// Endpoint for starting specified Game
+gameRouter.post('/:gameId/start', async (req, res, next) => {
+	const gameStarted = await startGame(req.params.gameId);
+	res.sendStatus(204);
+});
 
-// Endpoint for creating a answerInstance for specified test instance
+// Endpoint for creating a Response for specified Game
 gameRouter.post('/:gameId/answer', (req, res, next) => {});
 
-// Endpoint for ending specified test instance
+// Endpoint for ending specified Game
 gameRouter.post('/:gameId/end', (req, res, next) => {});
 
-// Endpoint for moving to the next question in specified test instance
+// Endpoint for moving to the next question in specified Game
 gameRouter.post('/:gameId/next-question', (req, res, next) => {});
 
 /* ------------------------------------------    ROUTES FOR AUTH    ----------------------------------------------- */
