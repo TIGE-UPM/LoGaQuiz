@@ -108,22 +108,45 @@ gameRouter.delete('/:gameId', async (req, res, next) => {
 });
 
 // Endpoint for creating a Player for specified test instance
-gameRouter.post('/:gameId/join', (req, res, next) => {});
+gameRouter.post('/:gameId/join', async (req, res, next) => {
+	const playerName = req.body.name;
+	const { gameId } = req.params;
+	const createdPlayer = await Test.createPlayer(playerName, gameId);
+	req.session.playerId = createdPlayer.id;
+	req.session.is_player = true;
+	res.sendStatus(204);
+});
 
 // Endpoint for starting specified Game
 gameRouter.post('/:gameId/start', async (req, res, next) => {
-	const gameStarted = await startGame(req.params.gameId);
+	const gameStarted = await Test.startGame(req.params.gameId);
 	res.sendStatus(204);
 });
 
 // Endpoint for creating a Response for specified Game
-gameRouter.post('/:gameId/answer', (req, res, next) => {});
+gameRouter.post('/:gameId/answer', async (req, res, next) => {
+	const { gameId } = req.params;
+	const { answerId } = req.body;
+	const { playerId } = req.session;
+	const createdResponse = await Test.createResponse(answerId, gameId, playerId);
+	res.sendStatus(204);
+});
 
 // Endpoint for ending specified Game
-gameRouter.post('/:gameId/end', (req, res, next) => {});
+gameRouter.post('/:gameId/end', async (req, res, next) => {
+	const gameEnded = await Test.endGame(req.params.gameId);
+	res.sendStatus(204);
+});
 
 // Endpoint for moving to the next question in specified Game
-gameRouter.post('/:gameId/next-question', (req, res, next) => {});
+gameRouter.post('/:gameId/next-question', async (req, res, next) => {
+	const { gameId } = req.params;
+	const nextQuestionObtained = await Test.nextQuestion(gameId);
+	// res.send(nextQuestionObtained);
+	if (nextQuestionObtained === null) {
+		res.send(404);
+	} else { res.sendStatus(204); }
+});
 
 /* ------------------------------------------    ROUTES FOR AUTH    ----------------------------------------------- */
 

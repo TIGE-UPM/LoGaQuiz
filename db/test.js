@@ -1,4 +1,4 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes, where } = require('sequelize');
 const sequelize = require('./index');
 
 /**
@@ -154,6 +154,9 @@ const PlayedQuestion = sequelize.define(
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
+		start_time: {
+			type: DataTypes.DATE,
+		},
 	},
 	{
 		timestamps: true,
@@ -199,7 +202,7 @@ const Game = sequelize.define(
 			primaryKey: true,
 		},
 		played_at: {
-			type: DataTypes.DATE,
+			type: DataTypes.DATE(3),
 		},
 		current_question: {
 			type: DataTypes.INTEGER,
@@ -213,6 +216,9 @@ const Game = sequelize.define(
 		timestamps: true,
 	}
 );
+// (async () => {
+// 	await Game.sync({ alter: true });
+// })();
 
 /**
  * Create the Model for the Players database
@@ -622,12 +628,154 @@ async function deleteGameById(gameId) {
  */
 async function startGame(gameId) {
 	const firstQuestion = await getFirstGameQuestion(gameId);
-	await Game.update({ played_at: DataTypes.NOW, current_question_id: firstQuestion.id }, {
+	await Game.update({ played_at: Date.now(), current_question: firstQuestion.id }, {
 		where: {
 			id: gameId,
 			played_at: null,
 		},
 	});
+	await PlayedQuestion.update({ start_time: Date.now() }, {
+		where: {
+			id: firstQuestion.id,
+		},
+	});
 }
 
-module.exports = { createNewTest, getAllTests, getTestById, deleteTestById, createNewGame, getAllGames, getGameById, deleteGameById, startGame };
+/**
+ * Returns the question with the question order = 1 and with the specified testId
+ * @param gameId
+ * @returns First question of the game
+ */
+async function getFirstGameQuestion(gameId) {
+	const { id: testId } = await PlayedTest.findOne({
+		where: {
+			game_id: gameId,
+		},
+	});
+	const firstQuestion = await PlayedQuestion.findOne({
+		where: {
+			played_test_id: testId,
+			question_order: 1,
+		},
+	});
+	return firstQuestion;
+}
+
+async function createPlayer(playerName, gameId) {
+	const createdPlayer = await Player.create({
+		name: `${playerName}`,
+		game_id: gameId,
+	});
+	return createdPlayer;
+}
+
+async function createResponse(answerId, gameId, playerId) {
+	const playedAnswer = await PlayedAnswer.findOne({
+		where: {
+			id: answerId,
+		},
+	});
+	const playedTest = await PlayedTest.findOne({
+		where: {
+			game_id: gameId,
+		},
+	});
+	const playedQuestion = await PlayedQuestion.findOne({
+		where: {
+			id: playedAnswer.played_question_id,
+		},
+	});
+	const currentPlayer = await Player.findOne({
+		where: {
+			id: playerId,
+		},
+	});
+	// console.log(`Start time: ${playedQuestion.start_time}`);
+	// console.log(typeof playedQuestion.start_time);
+	// console.log(`Answer time: ${Date.now()}`);
+	// console.log(typeof Date.now());
+	const diference = Date.now() - playedQuestion.start_time;
+	// console.log(`Time diference: ${diference}`);
+	// console.log(typeof diference);
+	if ((parseInt(gameId, 10) === currentPlayer.game_id) && (playedQuestion.played_test_id === playedTest.id)) {
+		const createdResponse = await Response.create({
+			answer_time: diference,
+			game_id: gameId,
+			player_id: playerId,
+			played_question_id: playedAnswer.played_question_id,
+			played_answer_id: answerId,
+		});
+		return createdResponse;
+	}
+	console.log('Error creating the response');
+	return null;
+}
+
+async function endGame(gameId) {
+	const gameEnded = await Game.update({ current_question: null, finished: true }, {
+		where: {
+			id: gameId,
+		},
+	});
+	return gameEnded;
+}
+
+/**
+ * Returns the question with the question order = 1 and with the specified testId
+ * @param gameId
+ * @returns First question of the game
+ */
+async function getNextGameQuestion(gameId, currentQuestionId) {
+	const { id: testId } = await PlayedTest.findOne({
+		where: {
+			game_id: gameId,
+		},
+	});
+	const currentOne = await PlayedQuestion.findByPk(currentQuestionId);
+	const nextQuestionObject = await PlayedQuestion.findOne({
+		where: {
+			played_test_id: testId,
+			question_order: currentOne.question_order + 1,
+		},
+	});
+	if (nextQuestion === null) {
+		console.log('There aren\'t any more questions in this test');
+	}
+	return nextQuestionObject;
+}
+
+async function nextQuestion(gameId) {
+	const currentGame = await Game.findByPk(gameId);
+	console.log(currentGame);
+	const nextQuestionFound = await getNextGameQuestion(gameId, currentGame.current_question);
+	if (nextQuestionFound === null) {
+		console.log("Error fetching next question, maybe there aren't any more");
+		return null;
+	}
+	await Game.update({ current_question: nextQuestionFound.id }, {
+		where: {
+			id: gameId,
+		},
+	});
+	await PlayedQuestion.update({ start_time: Date.now() }, {
+		where: {
+			id: nextQuestionFound.id,
+		},
+	});
+	return nextQuestionFound;
+}
+
+module.exports = {
+	createNewTest,
+	getAllTests,
+	getTestById,
+	deleteTestById,
+	createNewGame,
+	getAllGames,
+	getGameById,
+	deleteGameById,
+	startGame,
+	createPlayer,
+	createResponse,
+	endGame,
+	nextQuestion };
