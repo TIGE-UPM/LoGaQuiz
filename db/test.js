@@ -1,398 +1,4 @@
-const { DataTypes, where } = require('sequelize');
-const sequelize = require('./index');
-
-/**
- * Create the Model for the Tests database
- */
-const Test = sequelize.define(
-	'Test',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		title: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		image: {
-			type: DataTypes.STRING,
-			allowNull: true,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-
-/**
- * Create the Model for the Questions database
- */
-const Question = sequelize.define(
-	'Question',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		title: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		image: {
-			type: DataTypes.STRING,
-			allowNull: true,
-		},
-		question_type: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		allocated_time: {
-			type: DataTypes.DOUBLE,
-			allowNull: false,
-		},
-		question_order: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
-		weight: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-
-/**
- * Create the Model for the Answers database
- */
-const Answer = sequelize.define(
-	'Answer',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		title: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		is_correct: {
-			type: DataTypes.BOOLEAN,
-			allowNull: false,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-
-// ------------------------------------------------------------------------
-
-/**
- * Create the Model for the PlayedTests database
- */
-const PlayedTest = sequelize.define(
-	'PlayedTest',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		title: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		image: {
-			type: DataTypes.STRING,
-			allowNull: true,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-
-/**
- * Create the Model for the PlayedQuestions database
- */
-const PlayedQuestion = sequelize.define(
-	'PlayedQuestion',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		title: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		image: {
-			type: DataTypes.STRING,
-			allowNull: true,
-		},
-		question_type: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		allocated_time: {
-			type: DataTypes.DOUBLE,
-			allowNull: false,
-		},
-		question_order: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
-		weight: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
-		start_time: {
-			type: DataTypes.DATE,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-
-/**
- * Create the Model for the PlayedAnswers database
- */
-const PlayedAnswer = sequelize.define(
-	'PlayedAnswer',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		title: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		is_correct: {
-			type: DataTypes.BOOLEAN,
-			allowNull: false,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-
-//--------------------------------------------------------------------------
-
-/**
- * Create the Model for the Games database
- */
-const Game = sequelize.define(
-	'Game',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		played_at: {
-			type: DataTypes.DATE(3),
-		},
-		current_question: {
-			type: DataTypes.INTEGER,
-		},
-		finished: {
-			type: DataTypes.BOOLEAN,
-			allowNull: false,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-// (async () => {
-// 	await Game.sync({ alter: true });
-// })();
-
-/**
- * Create the Model for the Players database
- */
-const Player = sequelize.define(
-	'Player',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		name: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		ranking: {
-			type: DataTypes.INTEGER,
-		},
-		current_score: {
-			type: DataTypes.INTEGER,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-
-/**
- * Create the Model for the Responses database
- */
-const Response = sequelize.define(
-	'Response',
-	{
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			primaryKey: true,
-		},
-		answer_time: {
-			type: DataTypes.REAL,
-			allowNull: false,
-		},
-	},
-	{
-		timestamps: true,
-	}
-);
-/* ---------------------------------------- DATABASE RELATIONS   ----------------------------------------------------*/
-
-// Relations between Tests, Questions and Answers
-
-// Relation between Tests and Questions 1:N
-Test.hasMany(Question, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'test_id',
-});
-Question.belongsTo(Test, {
-	allowNull: false,
-	foreignKey: 'test_id',
-});
-
-// Relation between Questions and Answers 1:N
-Question.hasMany(Answer, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'question_id',
-});
-Answer.belongsTo(Question, {
-	allowNull: false,
-	foreignKey: 'question_id',
-});
-
-// Relations between PlayedTests (& Tests & Games), Played Questions and PlayedAnswers
-
-// Relation PlayedTests and Tests 1:N
-Test.hasMany(PlayedTest, {
-	onDelete: 'NO ACTION',
-	onUpdate: 'NO ACTION',
-	foreignKey: 'test_id',
-});
-PlayedTest.belongsTo(Test, {
-	allowNull: false,
-	foreignKey: 'test_id',
-});
-
-// Relation PlayedTests and Games 1:1
-Game.hasOne(PlayedTest, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'game_id',
-});
-PlayedTest.belongsTo(Game, {
-	allowNull: false,
-	foreignKey: 'game_id',
-});
-
-// Relation between PlayedTests and PlayedQuestions 1:N
-PlayedTest.hasMany(PlayedQuestion, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'played_test_id',
-});
-PlayedQuestion.belongsTo(PlayedTest, {
-	allowNull: false,
-	foreignKey: 'played_test_id',
-});
-
-// Relation between PlayedQuestions and PlayedAnswers 1:N
-PlayedQuestion.hasMany(PlayedAnswer, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'played_question_id',
-});
-PlayedAnswer.belongsTo(PlayedQuestion, {
-	allowNull: false,
-	foreignKey: 'played_question_id',
-});
-
-// Relations between Games, Players and Responses ------------------------------------------
-
-// Relation between Games and Players 1:N
-Game.hasMany(Player, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'game_id',
-});
-Player.belongsTo(Game, {
-	allowNull: false,
-	foreignKey: 'game_id',
-});
-
-// Relation between Responses and Games 1:N
-Game.hasMany(Response, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'game_id',
-});
-Response.belongsTo(Game, {
-	allowNull: false,
-	foreignKey: 'game_id',
-});
-
-// Relation between Responses and Players 1:N
-Player.hasMany(Response, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'player_id',
-});
-Response.belongsTo(Player, {
-	allowNull: false,
-	foreignKey: 'player_id',
-});
-
-// Relation between Responses and PlayedQuestions 1:N
-PlayedQuestion.hasMany(Response, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'played_question_id',
-});
-Response.belongsTo(PlayedQuestion, {
-	foreignKey: 'played_question_id',
-});
-
-// Relation between Responses and PlayedAnswers 1:N
-PlayedAnswer.hasMany(Response, {
-	onDelete: 'CASCADE',
-	onUpdate: 'CASCADE',
-	foreignKey: 'played_answer_id',
-});
-Response.belongsTo(PlayedAnswer, {
-	foreignKey: 'played_answer_id',
-});
+const { Test, Question, Answer, PlayedTest, PlayedQuestion, PlayedAnswer, Game, Player, Response } = require('./models');
 
 /* ------------------------------------------------------- Database functions -------------------------------------------*/
 
@@ -431,6 +37,67 @@ async function createNewTest(test) {
 		return null;
 	}
 	return createdTest;
+}
+
+async function updateTest(testId, test) {
+	const [rowsUpdated] = await Test.update({ title: `${test.title}` }, { where: { id: testId } });
+	if (!rowsUpdated) {
+		console.log('There was an error updating the test');
+		return null;
+	}
+
+	let questionOrder = 1;
+	// console.log(test);
+	// console.log(test.questions);
+	await Question.update({ questionOrder: null }, { where: { test_id: testId } });
+	for (const question of test.questions) {
+		let { id: questionId } = question;
+		if (questionId) {
+			await Question.update({
+				title: `${question.title}`,
+				question_type: `${question.question_type}`,
+				allocated_time: question.allocated_time,
+				question_order: questionOrder,
+				weight: question.weight,
+				test_id: testId,
+			}, { where: { id: questionId } });
+		} else {
+			questionId = (await Question.create({
+				title: `${question.title}`,
+				question_type: `${question.question_type}`,
+				allocated_time: question.allocated_time,
+				question_order: questionOrder,
+				weight: question.weight,
+				test_id: testId,
+			})).id;
+		}
+
+		for (const answer of question.answers) {
+			const { id: answerId } = answer;
+			if (answerId) {
+				await Answer.update({
+					title: `${answer.title}`,
+					is_correct: answer.is_correct,
+					question_id: questionId,
+				}, { where: { id: answerId } });
+			} else {
+				await Answer.create({
+					title: `${answer.title}`,
+					is_correct: answer.is_correct,
+					question_id: questionId,
+				});
+			}
+		}
+		questionOrder += 1;
+	}
+	await Question.destroy({ where: { test_id: testId, questionOrder: null } });
+
+	const updatedTest = await getTestById(testId);
+	if (!updatedTest) {
+		console.log('There was an error creating the test');
+		return null;
+	}
+	return updatedTest;
 }
 
 /**
@@ -558,7 +225,7 @@ async function deleteTestById(testId) {
  */
 async function createNewGame(game) {
 	const createdGame = await Game.create({
-		finished: false,
+		status: 'IDLE',
 	});
 	const realTest = await getTestById(game.testId);
 	const createdPlayedTest = await createNewPlayedTest(realTest, createdGame.id);
@@ -628,7 +295,7 @@ async function deleteGameById(gameId) {
  */
 async function startGame(gameId) {
 	const firstQuestion = await getFirstGameQuestion(gameId);
-	await Game.update({ played_at: Date.now(), current_question: firstQuestion.id }, {
+	await Game.update({ played_at: Date.now(), current_question: firstQuestion.id, status: 'PLAYING' }, {
 		where: {
 			id: gameId,
 			played_at: null,
@@ -647,15 +314,20 @@ async function startGame(gameId) {
  * @returns First question of the game
  */
 async function getFirstGameQuestion(gameId) {
-	const { id: testId } = await PlayedTest.findOne({
-		where: {
-			game_id: gameId,
-		},
-	});
+	// const { id: testId } = await PlayedTest.findOne({
+	// 	where: {
+	// 		game_id: gameId,
+	// 	},
+	// });
 	const firstQuestion = await PlayedQuestion.findOne({
 		where: {
-			played_test_id: testId,
 			question_order: 1,
+		},
+		include: {
+			model: PlayedTest,
+			where: {
+				game_id: gameId,
+			},
 		},
 	});
 	return firstQuestion;
@@ -712,7 +384,7 @@ async function createResponse(answerId, gameId, playerId) {
 }
 
 async function endGame(gameId) {
-	const gameEnded = await Game.update({ current_question: null, finished: true }, {
+	const gameEnded = await Game.update({ current_question: null, status: 'PLAYING' }, {
 		where: {
 			id: gameId,
 		},
@@ -765,8 +437,11 @@ async function nextQuestion(gameId) {
 	return nextQuestionFound;
 }
 
+getFirstGameQuestion(1);
+
 module.exports = {
 	createNewTest,
+	updateTest,
 	getAllTests,
 	getTestById,
 	deleteTestById,
@@ -778,4 +453,5 @@ module.exports = {
 	createPlayer,
 	createResponse,
 	endGame,
-	nextQuestion };
+	nextQuestion,
+};
