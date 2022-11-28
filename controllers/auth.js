@@ -4,9 +4,9 @@ const { getSettings } = require('../settings');
 
 /* ------------------------------------------    ROUTES FOR AUTH    ----------------------------------------------- */
 
-const authRouter = express.Router();
+const router = express.Router();
 
-authRouter.post('/admin-login', async (req, res) => {
+router.post('/admin-login', async (req, res) => {
 	const { password } = req.body;
 	const settings = await getSettings();
 	if (settings.adminPassword !== password) {
@@ -15,10 +15,13 @@ authRouter.post('/admin-login', async (req, res) => {
 	}
 	req.session.isAdmin = true;
 
-	res.sendStatus(204);
+	res.send({
+		isAdmin: !!req.session.isAdmin,
+		isPlayer: !!req.session.isPlayer,
+	});
 });
 
-authRouter.get('/', async (req, res) => {
+router.get('/', async (req, res) => {
 	res.send({
 		isAdmin: !!req.session.isAdmin,
 		isPlayer: !!req.session.isPlayer,
@@ -26,5 +29,5 @@ authRouter.get('/', async (req, res) => {
 });
 
 module.exports = {
-	router: authRouter,
+	router,
 };

@@ -1,0 +1,21 @@
+.lobby-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+
+	.menu {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		padding: 0 10px;
+		margin: 10px 0;
+	}
+
+	.players-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 0 10px;
+		margin: 10px 0;
+	}
+}

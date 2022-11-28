@@ -1,0 +1,20 @@
+.podium-place-container {
+	.name {
+		height: 35px;
+	}
+
+	&.first .podium-place {
+		background-color: $primary-soft;
+		height: 300px;
+	}
+
+	&.second .podium-place {
+		background-color: $primary;
+		height: 250px;
+	}
+
+	&.third .podium-place {
+		background-color: $primary-hard;
+		height: 200px;
+	}
+}

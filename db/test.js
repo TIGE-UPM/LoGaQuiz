@@ -16,17 +16,17 @@ async function createNewTest(test) {
 	for (const question of test.questions) {
 		const { id: questionId } = await Question.create({
 			title: `${question.title}`,
-			question_type: `${question.question_type}`,
-			allocated_time: question.allocated_time,
-			question_order: questionOrder,
+			questionType: `${question.questionType}`,
+			allocatedTime: question.allocatedTime,
+			questionOrder,
 			weight: question.weight,
-			test_id: testId,
+			testId,
 		});
 		for (const answer of question.answers) {
 			await Answer.create({
 				title: `${answer.title}`,
-				is_correct: answer.is_correct,
-				question_id: questionId,
+				isCorrect: answer.isCorrect,
+				questionId,
 			});
 		}
 		questionOrder += 1;
@@ -49,26 +49,26 @@ async function updateTest(testId, test) {
 	let questionOrder = 1;
 	// console.log(test);
 	// console.log(test.questions);
-	await Question.update({ questionOrder: null }, { where: { test_id: testId } });
+	await Question.update({ questionOrder: null }, { where: { testId } });
 	for (const question of test.questions) {
 		let { id: questionId } = question;
 		if (questionId) {
 			await Question.update({
 				title: `${question.title}`,
-				question_type: `${question.question_type}`,
-				allocated_time: question.allocated_time,
-				question_order: questionOrder,
+				questionType: `${question.questionType}`,
+				allocatedTime: question.allocatedTime,
+				questionOrder,
 				weight: question.weight,
-				test_id: testId,
+				testId,
 			}, { where: { id: questionId } });
 		} else {
 			questionId = (await Question.create({
 				title: `${question.title}`,
-				question_type: `${question.question_type}`,
-				allocated_time: question.allocated_time,
-				question_order: questionOrder,
+				questionType: `${question.questionType}`,
+				allocatedTime: question.allocatedTime,
+				questionOrder,
 				weight: question.weight,
-				test_id: testId,
+				testId,
 			})).id;
 		}
 
@@ -77,20 +77,20 @@ async function updateTest(testId, test) {
 			if (answerId) {
 				await Answer.update({
 					title: `${answer.title}`,
-					is_correct: answer.is_correct,
-					question_id: questionId,
+					isCorrect: answer.isCorrect,
+					questionId,
 				}, { where: { id: answerId } });
 			} else {
 				await Answer.create({
 					title: `${answer.title}`,
-					is_correct: answer.is_correct,
-					question_id: questionId,
+					isCorrect: answer.isCorrect,
+					questionId,
 				});
 			}
 		}
 		questionOrder += 1;
 	}
-	await Question.destroy({ where: { test_id: testId, questionOrder: null } });
+	await Question.destroy({ where: { testId, questionOrder: null } });
 
 	const updatedTest = await getTestById(testId);
 	if (!updatedTest) {
@@ -106,30 +106,28 @@ async function updateTest(testId, test) {
  * @param gameId
  */
 async function createNewPlayedTest(test, gameId) {
-	console.log(test);
-	console.log(gameId);
 	const { id: playedTestId } = await PlayedTest.create({
 		title: `${test.title}`,
 		image: `${test.image}`,
-		test_id: test.id,
-		game_id: gameId,
+		testId: test.id,
+		gameId,
 	});
 
-	for (const question of test.Questions) {
+	for (const question of test.questions) {
 		const { id: playedQuestionId } = await PlayedQuestion.create({
 			title: `${question.title}`,
 			image: `${question.image}`,
-			question_type: `${question.question_type}`,
-			allocated_time: question.allocated_time,
-			question_order: question.question_order,
+			questionType: `${question.questionType}`,
+			allocatedTime: question.allocatedTime,
+			questionOrder: question.questionOrder,
 			weight: question.weight,
-			played_test_id: playedTestId,
+			playedTestId,
 		});
-		for (const answer of question.Answers) {
+		for (const answer of question.answers) {
 			await PlayedAnswer.create({
 				title: `${answer.title}`,
-				is_correct: answer.is_correct,
-				played_question_id: playedQuestionId,
+				isCorrect: answer.isCorrect,
+				playedQuestionId,
 			});
 		}
 	}
@@ -147,9 +145,8 @@ async function createNewPlayedTest(test, gameId) {
  */
 async function getAllTests() {
 	const allTests = await Test.findAll({
-		attributes: ['id', 'title', 'image'],
+		attributes: ['id', 'title', 'image', 'createdAt', 'updatedAt'],
 	});
-	console.log(allTests);
 	return allTests;
 }
 
@@ -169,13 +166,12 @@ async function getTestById(testId) {
 				model: Answer,
 			},
 		},
-		order: [[Question, 'question_order', 'ASC']],
+		order: [[Question, 'questionOrder', 'ASC']],
 	});
 	if (!selectedTest) {
 		console.log("There isn't a test with that ID");
 		return null;
 	}
-
 	return selectedTest;
 }
 
@@ -195,7 +191,7 @@ async function getPlayedTestById(playedTestId) {
 				model: PlayedAnswer,
 			},
 		},
-		order: [[PlayedQuestion, 'question_order', 'ASC']],
+		order: [[PlayedQuestion, 'questionOrder', 'ASC']],
 	});
 	if (!selectedPlayedTest) {
 		console.log("There isn't a test with that ID");
@@ -223,11 +219,12 @@ async function deleteTestById(testId) {
  * Creates the specified game
  * @param game
  */
-async function createNewGame(game) {
+async function createNewGame(testId) {
 	const createdGame = await Game.create({
 		status: 'IDLE',
-	});
-	const realTest = await getTestById(game.testId);
+	}, { plain: true, returning: true });
+	console.log(createdGame);
+	const realTest = await getTestById(testId);
 	const createdPlayedTest = await createNewPlayedTest(realTest, createdGame.id);
 	if (!createdPlayedTest) {
 		console.log('There was an error creating the test');
@@ -242,7 +239,7 @@ async function createNewGame(game) {
  */
 async function getAllGames() {
 	const allGames = await Game.findAll({
-		attributes: ['played_at'],
+		attributes: ['startTime'],
 		include: {
 			model: PlayedTest,
 			attributes: ['id', 'title', 'image'],
@@ -261,12 +258,23 @@ async function getGameById(gameId) {
 		where: {
 			id: gameId,
 		},
-		include: {
-			model: Player,
-			include: {
-				model: Response,
+		include: [
+			{
+				model: Player,
+				include: {
+					model: Response,
+				},
 			},
-		},
+			{
+				model: PlayedTest,
+				include: {
+					model: PlayedQuestion,
+					include: {
+						model: PlayedAnswer,
+					},
+				},
+			},
+		],
 		// order: [[Player, 'ranking', 'ASC']],
 	});
 	if (!selectedGame) {
@@ -295,13 +303,13 @@ async function deleteGameById(gameId) {
  */
 async function startGame(gameId) {
 	const firstQuestion = await getFirstGameQuestion(gameId);
-	await Game.update({ played_at: Date.now(), current_question: firstQuestion.id, status: 'PLAYING' }, {
+	await Game.update({ startTime: Date.now(), currentQuestion: firstQuestion.id, status: 'PLAYING' }, {
 		where: {
 			id: gameId,
-			played_at: null,
+			startTime: null,
 		},
 	});
-	await PlayedQuestion.update({ start_time: Date.now() }, {
+	await PlayedQuestion.update({ startTime: Date.now() }, {
 		where: {
 			id: firstQuestion.id,
 		},
@@ -316,17 +324,17 @@ async function startGame(gameId) {
 async function getFirstGameQuestion(gameId) {
 	// const { id: testId } = await PlayedTest.findOne({
 	// 	where: {
-	// 		game_id: gameId,
+	// 		gameId: gameId,
 	// 	},
 	// });
 	const firstQuestion = await PlayedQuestion.findOne({
 		where: {
-			question_order: 1,
+			questionOrder: 1,
 		},
 		include: {
 			model: PlayedTest,
 			where: {
-				game_id: gameId,
+				gameId,
 			},
 		},
 	});
@@ -336,7 +344,7 @@ async function getFirstGameQuestion(gameId) {
 async function createPlayer(playerName, gameId) {
 	const createdPlayer = await Player.create({
 		name: `${playerName}`,
-		game_id: gameId,
+		gameId,
 	});
 	return createdPlayer;
 }
@@ -349,12 +357,12 @@ async function createResponse(answerId, gameId, playerId) {
 	});
 	const playedTest = await PlayedTest.findOne({
 		where: {
-			game_id: gameId,
+			gameId,
 		},
 	});
 	const playedQuestion = await PlayedQuestion.findOne({
 		where: {
-			id: playedAnswer.played_question_id,
+			id: playedAnswer.playedQuestionId,
 		},
 	});
 	const currentPlayer = await Player.findOne({
@@ -362,20 +370,20 @@ async function createResponse(answerId, gameId, playerId) {
 			id: playerId,
 		},
 	});
-	// console.log(`Start time: ${playedQuestion.start_time}`);
-	// console.log(typeof playedQuestion.start_time);
+	// console.log(`Start time: ${playedQuestion.startTime}`);
+	// console.log(typeof playedQuestion.startTime);
 	// console.log(`Answer time: ${Date.now()}`);
 	// console.log(typeof Date.now());
-	const diference = Date.now() - playedQuestion.start_time;
+	const diference = Date.now() - playedQuestion.startTime;
 	// console.log(`Time diference: ${diference}`);
 	// console.log(typeof diference);
-	if ((parseInt(gameId, 10) === currentPlayer.game_id) && (playedQuestion.played_test_id === playedTest.id)) {
+	if ((parseInt(gameId, 10) === currentPlayer.gameId) && (playedQuestion.playedTestId === playedTest.id)) {
 		const createdResponse = await Response.create({
-			answer_time: diference,
-			game_id: gameId,
-			player_id: playerId,
-			played_question_id: playedAnswer.played_question_id,
-			played_answer_id: answerId,
+			answerTime: diference,
+			gameId,
+			playerId,
+			playedQuestionId: playedAnswer.playedQuestionId,
+			playedAnswerId: answerId,
 		});
 		return createdResponse;
 	}
@@ -384,7 +392,7 @@ async function createResponse(answerId, gameId, playerId) {
 }
 
 async function endGame(gameId) {
-	const gameEnded = await Game.update({ current_question: null, status: 'PLAYING' }, {
+	const gameEnded = await Game.update({ currentQuestion: null, status: 'PLAYING' }, {
 		where: {
 			id: gameId,
 		},
@@ -400,14 +408,14 @@ async function endGame(gameId) {
 async function getNextGameQuestion(gameId, currentQuestionId) {
 	const { id: testId } = await PlayedTest.findOne({
 		where: {
-			game_id: gameId,
+			gameId,
 		},
 	});
 	const currentOne = await PlayedQuestion.findByPk(currentQuestionId);
 	const nextQuestionObject = await PlayedQuestion.findOne({
 		where: {
-			played_test_id: testId,
-			question_order: currentOne.question_order + 1,
+			playedTestId: testId,
+			questionOrder: currentOne.questionOrder + 1,
 		},
 	});
 	if (nextQuestion === null) {
@@ -418,18 +426,17 @@ async function getNextGameQuestion(gameId, currentQuestionId) {
 
 async function nextQuestion(gameId) {
 	const currentGame = await Game.findByPk(gameId);
-	console.log(currentGame);
-	const nextQuestionFound = await getNextGameQuestion(gameId, currentGame.current_question);
+	const nextQuestionFound = await getNextGameQuestion(gameId, currentGame.currentQuestion);
 	if (nextQuestionFound === null) {
 		console.log("Error fetching next question, maybe there aren't any more");
 		return null;
 	}
-	await Game.update({ current_question: nextQuestionFound.id }, {
+	await Game.update({ currentQuestionId: nextQuestionFound.id }, {
 		where: {
 			id: gameId,
 		},
 	});
-	await PlayedQuestion.update({ start_time: Date.now() }, {
+	await PlayedQuestion.update({ startTime: Date.now() }, {
 		where: {
 			id: nextQuestionFound.id,
 		},
@@ -437,7 +444,7 @@ async function nextQuestion(gameId) {
 	return nextQuestionFound;
 }
 
-getFirstGameQuestion(1);
+// getFirstGameQuestion(1);
 
 module.exports = {
 	createNewTest,

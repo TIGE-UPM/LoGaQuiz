@@ -1,12 +1,17 @@
+const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const http = require('http');
 const expressSession = require('express-session');
 const SessionStore = require('express-session-sequelize')(expressSession.Store);
+const socketio = require('./socketio');
 
 const Api = require('./api');
+const { handleErrors } = require('./errors');
+const Events = require('./utils/events');
 
 const app = express();
-const port = 3000;
+const { PORT = 4000 } = process.env;
 
 const db = require('./db');
 
@@ -20,6 +25,19 @@ app.use(expressSession({
 
 app.use('/api', Api);
 
-app.listen(port, () => {
-	console.log(`Example app listening on port ${port}`);
+app.use(express.static('build'));
+
+app.use((req, res) => {
+	res.sendFile(path.join(__dirname, './build/index.html'));
+});
+
+handleErrors(app);
+
+const httpServer = http.createServer(app);
+socketio.init(httpServer);
+
+Events.init();
+
+httpServer.listen(PORT, '0.0.0.0', () => {
+	console.log(`App listening on port ${PORT}`);
 });

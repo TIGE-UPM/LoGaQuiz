@@ -1,0 +1,23 @@
+.question-result-container {
+	position: relative;
+	height: 100%;
+
+	.question-result-header {
+		height: 50px;
+		background-color: rgb(35 41 49);
+
+		img {
+			height: 100%;
+			padding: 5px;
+			object-fit: contain;
+		}
+	}
+
+	.question-result-content {
+		min-height: calc(100% - 100px);
+	}
+
+	.question-result-footer {
+		height: 50px;
+	}
+}

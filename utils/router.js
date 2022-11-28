@@ -11,7 +11,7 @@ async function userIsPlayer(req, res, next) {
 	if (req.session.isPlayer) {
 		return next();
 	}
-	return next(new Error('You are not an admin'));
+	return next(new Error('You are not a player'));
 }
 
 module.exports = {

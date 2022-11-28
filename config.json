@@ -1,0 +1,7 @@
+{
+	"name": "LoGaQuiz",
+	"main": "server.js",
+	"adminPath": "/admin",
+	"installCommand": "npm i",
+	"startCommand": "node server.js"
+}

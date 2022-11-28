@@ -5,7 +5,7 @@ const sequelize = require('./index');
  * Create the Model for the Tests database
  */
 const Test = sequelize.define(
-	'Test',
+	'test',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -27,7 +27,7 @@ const Test = sequelize.define(
  * Create the Model for the Questions database
  */
 const Question = sequelize.define(
-	'Question',
+	'question',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -42,17 +42,17 @@ const Question = sequelize.define(
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
-		question_type: {
+		questionType: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		allocated_time: {
+		allocatedTime: {
 			type: DataTypes.DOUBLE,
 			allowNull: false,
 		},
-		question_order: {
+		questionOrder: {
 			type: DataTypes.INTEGER,
-			allowNull: false,
+			allowNull: true,
 		},
 		weight: {
 			type: DataTypes.INTEGER,
@@ -65,7 +65,7 @@ const Question = sequelize.define(
  * Create the Model for the Answers database
  */
 const Answer = sequelize.define(
-	'Answer',
+	'answer',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -76,7 +76,7 @@ const Answer = sequelize.define(
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		is_correct: {
+		isCorrect: {
 			type: DataTypes.BOOLEAN,
 			allowNull: false,
 		},
@@ -89,7 +89,7 @@ const Answer = sequelize.define(
  * Create the Model for the PlayedTests database
  */
 const PlayedTest = sequelize.define(
-	'PlayedTest',
+	'playedTest',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -111,7 +111,7 @@ const PlayedTest = sequelize.define(
  * Create the Model for the PlayedQuestions database
  */
 const PlayedQuestion = sequelize.define(
-	'PlayedQuestion',
+	'playedQuestion',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -126,23 +126,23 @@ const PlayedQuestion = sequelize.define(
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
-		question_type: {
+		questionType: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		allocated_time: {
+		allocatedTime: {
 			type: DataTypes.DOUBLE,
 			allowNull: false,
 		},
-		question_order: {
+		questionOrder: {
 			type: DataTypes.INTEGER,
-			allowNull: false,
+			allowNull: true,
 		},
 		weight: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
-		start_time: {
+		startTime: {
 			type: DataTypes.DATE,
 		},
 	}
@@ -152,7 +152,7 @@ const PlayedQuestion = sequelize.define(
  * Create the Model for the PlayedAnswers database
  */
 const PlayedAnswer = sequelize.define(
-	'PlayedAnswer',
+	'playedAnswer',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -163,7 +163,7 @@ const PlayedAnswer = sequelize.define(
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		is_correct: {
+		isCorrect: {
 			type: DataTypes.BOOLEAN,
 			allowNull: false,
 		},
@@ -176,35 +176,20 @@ const PlayedAnswer = sequelize.define(
  * Create the Model for the Games database
  */
 const Game = sequelize.define(
-	'Game',
+	'game',
 	{
 		id: {
 			type: DataTypes.INTEGER,
-			autoIncrement: true,
 			primaryKey: true,
 		},
-		played_at: {
+		startTime: {
 			type: DataTypes.DATE(3),
-		},
-		current_question: {
-			type: DataTypes.INTEGER,
 		},
 		status: {
 			type: DataTypes.ENUM,
-			values: ['PLAYING', 'FINISHED'],
-			defaultValue: 'PLAYING',
+			values: ['IDLE', 'PLAYING', 'FINISHED'],
+			defaultValue: 'IDLE',
 		},
-	},
-	{
-		indexes: [
-			{
-				unique: true,
-				fields: ['status'],
-				where: {
-					status: 'PLAYING',
-				},
-			},
-		],
 	}
 );
 // (async () => {
@@ -215,7 +200,7 @@ const Game = sequelize.define(
  * Create the Model for the Players database
  */
 const Player = sequelize.define(
-	'Player',
+	'player',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -229,8 +214,9 @@ const Player = sequelize.define(
 		ranking: {
 			type: DataTypes.INTEGER,
 		},
-		current_score: {
+		currentScore: {
 			type: DataTypes.INTEGER,
+			defaultValue: 0,
 		},
 	}
 );
@@ -239,17 +225,29 @@ const Player = sequelize.define(
  * Create the Model for the Responses database
  */
 const Response = sequelize.define(
-	'Response',
+	'response',
 	{
 		id: {
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
 			primaryKey: true,
 		},
-		answer_time: {
+		answerTime: {
 			type: DataTypes.REAL,
 			allowNull: false,
 		},
+		score: {
+			type: DataTypes.INTEGER,
+			defaultValue: 0,
+		},
+	},
+	{
+		indexes: [
+			{
+				unique: true,
+				fields: ['playerId', 'playedQuestionId'],
+			},
+		],
 	}
 );
 /* ---------------------------------------- DATABASE RELATIONS   ----------------------------------------------------*/
@@ -260,22 +258,22 @@ const Response = sequelize.define(
 Test.hasMany(Question, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'test_id',
+	foreignKey: 'testId',
 });
 Question.belongsTo(Test, {
 	allowNull: false,
-	foreignKey: 'test_id',
+	foreignKey: 'testId',
 });
 
 // Relation between Questions and Answers 1:N
 Question.hasMany(Answer, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'question_id',
+	foreignKey: 'questionId',
 });
 Answer.belongsTo(Question, {
 	allowNull: false,
-	foreignKey: 'question_id',
+	foreignKey: 'questionId',
 });
 
 // Relations between PlayedTests (& Tests & Games), Played Questions and PlayedAnswers
@@ -284,44 +282,57 @@ Answer.belongsTo(Question, {
 Test.hasMany(PlayedTest, {
 	onDelete: 'NO ACTION',
 	onUpdate: 'NO ACTION',
-	foreignKey: 'test_id',
+	foreignKey: 'testId',
 });
 PlayedTest.belongsTo(Test, {
 	allowNull: false,
-	foreignKey: 'test_id',
+	foreignKey: 'testId',
 });
 
 // Relation PlayedTests and Games 1:1
 Game.hasOne(PlayedTest, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'game_id',
+	foreignKey: 'gameId',
 });
 PlayedTest.belongsTo(Game, {
 	allowNull: false,
-	foreignKey: 'game_id',
+	foreignKey: 'gameId',
+});
+
+// Relation PlayedQuestion and Games 1:1
+PlayedQuestion.hasOne(Game, {
+	allowNull: true,
+	onDelete: 'CASCADE',
+	onUpdate: 'CASCADE',
+	foreignKey: 'currentQuestionId',
+});
+Game.belongsTo(PlayedQuestion, {
+	allowNull: true,
+	foreignKey: 'currentQuestionId',
+	as: 'currentQuestion',
 });
 
 // Relation between PlayedTests and PlayedQuestions 1:N
 PlayedTest.hasMany(PlayedQuestion, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'played_test_id',
+	foreignKey: 'playedTestId',
 });
 PlayedQuestion.belongsTo(PlayedTest, {
 	allowNull: false,
-	foreignKey: 'played_test_id',
+	foreignKey: 'playedTestId',
 });
 
 // Relation between PlayedQuestions and PlayedAnswers 1:N
 PlayedQuestion.hasMany(PlayedAnswer, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'played_question_id',
+	foreignKey: 'playedQuestionId',
 });
 PlayedAnswer.belongsTo(PlayedQuestion, {
 	allowNull: false,
-	foreignKey: 'played_question_id',
+	foreignKey: 'playedQuestionId',
 });
 
 // Relations between Games, Players and Responses ------------------------------------------
@@ -330,53 +341,53 @@ PlayedAnswer.belongsTo(PlayedQuestion, {
 Game.hasMany(Player, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'game_id',
+	foreignKey: 'gameId',
 });
 Player.belongsTo(Game, {
 	allowNull: false,
-	foreignKey: 'game_id',
+	foreignKey: 'gameId',
 });
 
 // Relation between Responses and Games 1:N
 Game.hasMany(Response, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'game_id',
+	foreignKey: 'gameId',
 });
 Response.belongsTo(Game, {
 	allowNull: false,
-	foreignKey: 'game_id',
+	foreignKey: 'gameId',
 });
 
 // Relation between Responses and Players 1:N
 Player.hasMany(Response, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'player_id',
+	foreignKey: 'playerId',
 });
 Response.belongsTo(Player, {
 	allowNull: false,
-	foreignKey: 'player_id',
+	foreignKey: 'playerId',
 });
 
 // Relation between Responses and PlayedQuestions 1:N
 PlayedQuestion.hasMany(Response, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'played_question_id',
+	foreignKey: 'playedQuestionId',
 });
 Response.belongsTo(PlayedQuestion, {
-	foreignKey: 'played_question_id',
+	foreignKey: 'playedQuestionId',
 });
 
 // Relation between Responses and PlayedAnswers 1:N
 PlayedAnswer.hasMany(Response, {
 	onDelete: 'CASCADE',
 	onUpdate: 'CASCADE',
-	foreignKey: 'played_answer_id',
+	foreignKey: 'playedAnswerId',
 });
 Response.belongsTo(PlayedAnswer, {
-	foreignKey: 'played_answer_id',
+	foreignKey: 'playedAnswerId',
 });
 
 module.exports = {

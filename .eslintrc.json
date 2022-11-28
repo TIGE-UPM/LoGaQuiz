@@ -1,15 +1,25 @@
 {
 	"parserOptions": {
 		"parser": "babel-eslint",
-		"ecmaVersion": 2020
+        "ecmaFeatures": {
+            "jsx": true
+        },
+        "ecmaVersion": "latest",
+        "sourceType": "module"
 	},
 	"root": true,
 	"env": {
-		"node": true
+        "browser": true,
+		"node": true,
+        "es2021": true
 	},
 	"extends": [
-		"airbnb-base"
+		"airbnb-base",
+        "plugin:react/recommended"
 	],
+    "plugins": [
+        "react"
+    ],
 	"rules": {
 		"no-param-reassign": [
 			"error",
@@ -85,6 +95,19 @@
 		],
 		"no-await-in-loop": [
 			"off"
-		]
+		],
+		"import/no-unresolved": [2, { "ignore": ["@Components", "@Assets", "@Styles", "@Store", "@Views", "@Src"] }],
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "quotes": [
+            "error",
+            "single"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ]
 	}
 }
