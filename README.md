@@ -89,6 +89,6 @@ In order to download the app, first the repository must be cloned. Then, inside 
 
 ## 3. Launching the app
 
-In order to launch the app after downloading the repository, the ``npm build`` command must be executed once. This command will compile the app. Finally, the ``npm start`` command must be executed. This command will start the app.
+In order to launch the app after downloading the repository, the ``npm start`` command must be executed. This command will start the app.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
